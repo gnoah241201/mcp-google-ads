@@ -73,8 +73,8 @@ def set_campaign_budget(
     Args:
         amount_micros: Budget in micros (1,000,000 = 1 unit of currency).
     """
-    from google.ads.googleads.v21.resources.types.campaign_budget import CampaignBudget
-    from google.ads.googleads.v21.services.types.campaign_budget_service import CampaignBudgetOperation
+    from google.ads.googleads.v24.resources.types.campaign_budget import CampaignBudget
+    from google.ads.googleads.v24.services.types.campaign_budget_service import CampaignBudgetOperation
     from google.protobuf.field_mask_pb2 import FieldMask
 
     cid = normalize_customer_id(customer_id)
@@ -82,14 +82,14 @@ def set_campaign_budget(
     gads_service = client.get_service("GoogleAdsService")
 
     # First get the campaign to find its budget resource name
-    campaign_query = f'SELECT campaign.id, campaign.budget.resource_name FROM campaign WHERE campaign.id = "{campaign_id}"'
+    campaign_query = f'SELECT campaign.id, campaign.campaign_budget FROM campaign WHERE campaign.id = "{campaign_id}"'
 
     def get_budget():
         return gads_service.search(customer_id=cid, query=campaign_query)
 
     response = _execute(get_budget)
-    row = next(response)
-    budget_resource_name = row.campaign.budget.resource_name
+    row = next(iter(response))
+    budget_resource_name = row.campaign.campaign_budget
 
     budget_service = client.get_service("CampaignBudgetService")
 
@@ -107,7 +107,6 @@ def set_campaign_budget(
         return budget_service.mutate_campaign_budgets(
             customer_id=cid,
             operations=[operation],
-            validate_only=dry_run,
         )
 
     return execute_mutate(
